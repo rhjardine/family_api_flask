@@ -13,7 +13,23 @@ app.url_map.strict_slashes = False
 CORS(app)
 
 # create the jackson family object
-jackson_family = FamilyStructure("Jackson")
+jackson_family = FamilyStructure("Jackson", [
+    {
+        "first_name": "John",
+        "age":33,
+        "lucky_numbers": [7, 13, 22]
+    },
+    {
+        "first_name": "Jane",
+        "age":35,
+        "lucky_numbers": [10, 14, 3]
+    },
+    {
+        "first_name": "Jimmy",
+        "age":5,
+        "lucky_numbers": [1]
+    }
+])
 
 # Handle/serialize errors like a JSON object
 @app.errorhandler(APIException)
@@ -30,13 +46,27 @@ def handle_hello():
 
     # this is how you can use the Family datastructure by calling its methods
     members = jackson_family.get_all_members()
-    response_body = {
-        "hello": "world",
-        "family": members
-    }
 
+    return jsonify(members), 200
 
-    return jsonify(response_body), 200
+@app.route('/member', methods=['POST'])
+def handle_new_member():
+    body = request.json
+    jackson_family.add_member(body)
+    
+    return {}, 200
+
+@app.route('/member/<int:id>', methods=['GET', 'DELETE'])
+def handle_member(id):
+    if request.method == 'GET':
+        selected_member = jackson_family.get_member(id)
+        if not selected_member:
+            return {}, 400
+        return jsonify(selected_member), 200
+    else:
+        jackson_family.delete_member(id)
+        return jsonify({"done": True}), 200
+
 
 # this only runs if `$ python src/app.py` is executed
 if __name__ == '__main__':
